@@ -3,8 +3,9 @@ import platform
 import sys
 import subprocess
 from dotenv import load_dotenv
-from .config import settings
+from .config import settings, Colors
 from .openai_api import generate_shell_command, is_command_safe
+from .utils import colorize
 
 def main():
     # Load environment variables
@@ -35,9 +36,10 @@ def main():
 
     if command_safe:
         # Print shell command and ask user for confirmation
-        print(f"Generated shell command: {shell_command}")
+        print(colorize(f"Generated shell command: {shell_command}", Colors.OKGREEN))
         if command_execution_confirmation:
-            user_input = input("Do you want to execute this command? (y/n): ").lower()
+            if command_execution_confirmation:
+                user_input = input(colorize("Do you want to execute this command? (y/n): ", Colors.OKCYAN)).lower()
             if user_input == 'y':
                 # Execute command in shell
                 if operating_system == 'Windows':
@@ -45,7 +47,7 @@ def main():
                 else:
                     subprocess.run(shell_command, shell=True, executable='/bin/bash', check=True)
             else:
-                print("Command execution aborted.")
+                print(colorize("Command execution aborted.", Colors.WARNING))
         else:
             # Execute command without asking for confirmation
             if operating_system == 'Windows':
@@ -53,7 +55,7 @@ def main():
             else:
                 subprocess.run(shell_command, shell=True, executable='/bin/bash', check=True)
     else:
-        print("The generated command was not considered safe to execute. Aborted.")
+        print(colorize("The generated command was not considered safe to execute. Aborted.", Colors.FAIL))
 
 if __name__ == "__main__":
     main()
