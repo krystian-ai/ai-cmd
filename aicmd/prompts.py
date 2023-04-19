@@ -8,6 +8,7 @@ Given the user command: "{user_command}", provide the appropriate command line t
 # Prompt to check if commandline is safe for user or the PC
 check_command_safety_prompt = """
 Is the following command line safe for the user and their computer?
+Respond only Yes or No.
 Command: {command}
 """
 
