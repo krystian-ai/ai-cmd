@@ -1,5 +1,5 @@
 import openai
-from prompts import (
+from .prompts import (
     get_commandline_prompt,
     check_command_safety_prompt,
 )

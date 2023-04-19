@@ -3,8 +3,8 @@ import platform
 import sys
 import subprocess
 from dotenv import load_dotenv
-from config import settings
-from openai_api import generate_shell_command, is_command_safe
+from .config import settings
+from .openai_api import generate_shell_command, is_command_safe
 
 def main():
     # Load environment variables
