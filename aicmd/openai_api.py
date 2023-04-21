@@ -2,7 +2,7 @@ import openai
 from .prompts import (
     get_commandline_prompt,
     check_command_safety_prompt,
-    generate_message_prompt,
+    get_message_prompt,
 )
 
 def generate_shell_command(user_command, openai_api_key, openai_model_config):
@@ -35,12 +35,12 @@ def is_command_safe(shell_command, openai_api_key, openai_model_config):
     )
 
     safety_result = response.choices[0].text.strip().lower()
-    return safety_result == "yes"
+    return safety_result
 
-def generate_message_prompt(context, openai_api_key, openai_model_config):
+def get_result_analysis(context, openai_api_key, openai_model_config):
     openai.api_key = openai_api_key
 
-    formatted_prompt = generate_message_prompt.format(context=context)
+    formatted_prompt = get_message_prompt.format(context=context)
     response = openai.Completion.create(
         engine=openai_model_config["model_name"],
         prompt=formatted_prompt,
