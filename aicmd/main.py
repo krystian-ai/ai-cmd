@@ -4,7 +4,7 @@ import sys
 import subprocess
 from dotenv import load_dotenv
 from .config import settings, Colors
-from .openai_api import generate_shell_command, is_command_safe
+from .openai_api import generate_shell_command, is_command_safe, generate_message_prompt  # Add generate_message_prompt
 from .utils import colorize
 
 def main():
@@ -18,7 +18,7 @@ def main():
 
     # Set up OpenAI engine with parameters
     openai_model_config = settings["openai_model_config"]
-    
+
     # Read and recognize the operating system
     operating_system = platform.system()
 
@@ -27,7 +27,7 @@ def main():
 
     # Generate shell command using OpenAI API
     shell_command = generate_shell_command(user_command, openai_api_key, openai_model_config)
-    
+
     # Check if command is safe
     if security_check:
         command_safe = is_command_safe(shell_command, openai_api_key, openai_model_config)
@@ -35,25 +35,29 @@ def main():
         command_safe = True
 
     if command_safe:
-        # Print shell command and ask user for confirmation
+        # Print shell command
         print(colorize(f"Generated shell command: {shell_command}", Colors.OKGREEN))
-        if command_execution_confirmation:
-            if command_execution_confirmation:
-                user_input = input(colorize("Do you want to execute this command? (y/n): ", Colors.OKCYAN)).lower()
-            if user_input == 'y':
-                # Execute command in shell
-                if operating_system == 'Windows':
-                    subprocess.run(shell_command, shell=True, check=True)
-                else:
-                    subprocess.run(shell_command, shell=True, executable='/bin/bash', check=True)
-            else:
-                print(colorize("Command execution aborted.", Colors.WARNING))
+
+        # Ask user for confirmation if security check is enabled or command_execution_confirmation is enabled
+        if security_check or command_execution_confirmation:
+            user_input = input(colorize("Do you want to execute this command? (y/n): ", Colors.OKCYAN)).lower()
+            execute_command = user_input == 'y'
         else:
-            # Execute command without asking for confirmation
+            execute_command = True
+
+        if execute_command:
+            # Execute command in shell and capture output
             if operating_system == 'Windows':
-                subprocess.run(shell_command, shell=True, check=True)
+                result = subprocess.run(shell_command, shell=True, check=True, capture_output=True, text=True)
             else:
-                subprocess.run(shell_command, shell=True, executable='/bin/bash', check=True)
+                result = subprocess.run(shell_command, shell=True, executable='/bin/bash', check=True, capture_output=True, text=True)
+            
+            # Send output to OpenAI API
+            message_prompt = generate_message_prompt(result.stdout, openai_api_key, openai_model_config)
+            print(colorize(f"OpenAI prompt: {message_prompt}", Colors.OKCYAN))
+
+        else:
+            print(colorize("Command execution aborted.", Colors.WARNING))
     else:
         print(colorize("The generated command was not considered safe to execute. Aborted.", Colors.FAIL))
 
