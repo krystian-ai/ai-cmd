@@ -1,41 +1,43 @@
 import os
 import platform
 import sys
-import subprocess
+
 from dotenv import load_dotenv
 from .config import settings, Colors
-from .openai_api import generate_shell_command, is_command_safe
-from .utils import colorize
+from .openai_api import generate_shell_command, is_command_safe, get_result_analysis
+from .utils import colorize, execute_command
 
-def main():
-    # Load environment variables
+
+def load_env_vars():
     load_dotenv()
-    openai_api_key = os.getenv("OPENAI_API_KEY")
+    return os.getenv("OPENAI_API_KEY")
 
-    # Read the configuration
-    command_execution_confirmation = settings["command_execution_confirmation"]
-    security_check = settings["security_check"]
 
-    # Set up OpenAI engine with parameters
-    openai_model_config = settings["openai_model_config"]
-    
-    # Read and recognize the operating system
-    operating_system = platform.system()
+def read_config():
+    return settings["command_execution_confirmation"], settings["security_check"], settings["openai_model_config"]
 
-    # Read the command from the command prompt
-    user_command = " ".join(sys.argv[1:])
 
-    # Generate shell command using OpenAI API
-    shell_command = generate_shell_command(user_command, openai_api_key, openai_model_config)
-    
-    # Check if command is safe
+def recognize_operating_system():
+    return platform.system()
+
+
+def read_user_command():
+    return " ".join(sys.argv[1:])
+
+
+def print_and_check_security(shell_command, security_check, openai_api_key, openai_model_config):
+    print(colorize(f"EXECUTEING: {shell_command}", Colors.OKGREEN))
+
     if security_check:
-        command_safe = is_command_safe(shell_command, openai_api_key, openai_model_config)
+        command_safety_analysis = is_command_safe(shell_command, openai_api_key, openai_model_config)
+        if command_safety_analysis.startswith("safe"):
+            command_safe = True
+        else:
+            command_safe = False
+            print(colorize(f"WARNING: {command_safety_analysis}", Colors.WARNING))
     else:
         command_safe = True
 
-    user_input = ''
-    
     if command_safe:
         # Print shell command and ask user for confirmation
         print(colorize(f"Generated shell command: {shell_command}", Colors.OKGREEN))
@@ -57,7 +59,8 @@ def main():
             else:
                 subprocess.run(shell_command, shell=True, executable='/bin/bash', check=True)
     else:
-        print(colorize("The generated command was not considered safe to execute. Aborted.", Colors.FAIL))
+        print(colorize("Command execution aborted.", Colors.FAIL))
+
 
 if __name__ == "__main__":
     main()
