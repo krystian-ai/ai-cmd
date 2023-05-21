@@ -34,6 +34,8 @@ def main():
     else:
         command_safe = True
 
+    user_input = ''
+    
     if command_safe:
         # Print shell command and ask user for confirmation
         print(colorize(f"Generated shell command: {shell_command}", Colors.OKGREEN))
